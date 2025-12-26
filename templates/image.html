@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 智能助理</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <style>
+
+    </style>
+</head>
+
+<body>
+    {% include '_navbar.html' %}
+    <div class="container">
+
+
+        <div class="container mt-5">
+            <!-- <div class="row justify-content-center"> -->
+
+            <h2 class="display-6 fw-bold text-secondary mb-4 pb-2 border-bottom">
+                <i class="bi bi-image-fill me-2"></i>練習一：載入圖片
+            </h2>
+            <button id="buttonLoad" class="btn btn-primary">載入圖片</button>
+            <h2 class="display-6 fw-bold text-secondary my-4 pb-2 border-bottom">
+                <i class="bi bi-image-fill me-2"></i>練習二：上傳圖片
+            </h2>
+            <div class="input-group my-3">
+                <input type="file" id="fileInput" class="form-control" accept=".jpg, .jpeg, .png, .gif">
+                <button id="buttonUpload" class="btn btn-primary" type="button">檔案上傳</button>
+            </div>
+
+            <div class="mt-3">
+                <img id="img1" class="img-fluid rounded border shadow-sm" style="width: 300px; height: auto;"
+                    src="static/images/empty.png" />
+            </div>
+
+
+            <div id="divInfo" class="alert alert-info mt-5"></div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const divInfo = document.querySelector('#divInfo');
+        const theImg = document.querySelector('#img1');
+        const btnLoad = document.querySelector('#buttonLoad');
+        const btnUpload = document.querySelector('#buttonUpload');
+        const fileInput = document.querySelector('#fileInput');
+        btnLoad.addEventListener('click', async () => {
+            try {
+
+                const response = await fetch('/api/image')
+                if (!response.ok) throw new Error('有錯誤，無法取得資料');
+
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('image')) {
+                    throw new Error('回傳格式錯誤，預期收到圖片');
+                }
+
+                const data = await response.blob();
+                const imageUrl = URL.createObjectURL(data);
+                theImg.src = imageUrl;
+                divInfo.textContent = '圖片載入成功';
+
+            } catch (err) {
+                divInfo.textContent = err.message;
+
+            } finally {
+
+            }
+
+
+
+
+        })
+
+        theImg.onload = () => {
+            // 當圖片真的出現在畫面上後，這個暫存網址就可以作廢了，節省記憶體
+            URL.revokeObjectURL(theImg.src);
+        };
+
+        //預覽圖片
+        fileInput.addEventListener('change', event => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = event => {
+                theImg.src = event.target.result;
+            };
+            reader.readAsDataURL(file);  // 將檔案轉為 base64 URI
+
+        })
+
+        //檔案上傳
+        btnUpload.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+
+            // 2. 基本檢查：是否選了檔案
+            if (!file) {
+                alert('請先選擇一張圖片！');
+                return;
+            }
+            const formData = new FormData();
+            formData.append('image', file); // 'image' 必須與api接資料的名稱一致
+
+            try {
+                const response = await fetch('/api/image', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    // 上傳成功
+                    divInfo.innerHTML = `
+                <p class="text-success">上傳成功！</p>
+                // <p class="text-info">${data.result}</p>
+                <p>圖片路徑: <a href="${data.url}" target="_blank">${data.url}</a></p>
+            `;
+
+                } else {
+                    // 後端回傳 abort(400) 或其他錯誤
+                    throw new Error(data.message || '上傳過程中發生錯誤');
+                }
+
+            } catch (err) {
+                divInfo.textContent = err.message;
+            }
+        })
+
+    </script>
+</body>
+
+</html>

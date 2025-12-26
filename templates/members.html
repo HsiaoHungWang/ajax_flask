@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+</head>
+
+<body>
+    {% include '_navbar.html' %}
+    <div class="container mt-3">
+        <div class="row">
+            <div class="col-8">
+                <table class="table table-bordered table-striped" id="membersTable">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>姓名</th>
+                            <th>Email</th>
+                            <th>年齡</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+
+            </div>
+            <div class="col-4">
+                <form id="memberForm" onsubmit="submitHandler(event)">
+                    <div class="mb-3">
+                        <label for="Name" class="form-label">姓名</label>
+                        <input type="text" class="form-control" id="Name" name="Name">
+                    </div>
+                    <div class="mb-3">
+                        <label for="Email" class="form-label">電子郵件</label>
+                        <input type="email" class="form-control" id="Email" name="Email">
+                    </div>
+                    <div class="mb-3">
+                        <label for="Password1" class="form-label">密碼</label>
+                        <input type="password" class="form-control" id="Password1" name="Password">
+                    </div>
+                    <div class="mb-3">
+                        <label for="Password2" class="form-label">密碼確認</label>
+                        <input type="password" class="form-control" id="Password2" name="PasswordConfirm">
+                    </div>
+                    <div class="mb-3">
+                        <label for="Age" class="form-label">年紀</label>
+                        <input type="number" class="form-control" id="Age" name="Age">
+                    </div>
+                    <div class="mb-3">
+                        <label for="File" class="form-label">Avatar</label>
+                        <input type="file" class="form-control" id="File" name="File">
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-primary">送出</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal -->
+    <div class="modal fade" id="MemberModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">會員修改</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="memberUpdateForm">
+
+                        <input type="hidden" class="form-control" id="Id" name="MemberId">
+                        <div class="mb-3">
+                            <label for="Name1" class="form-label">姓名</label>
+                            <input type="text" class="form-control" id="Name1" name="Name">
+                        </div>
+                        <div class="mb-3">
+                            <label for="Email1" class="form-label">電子郵件</label>
+                            <input type="email" class="form-control" id="Email1" name="Email">
+                        </div>
+                        <div class="mb-3">
+                            <label for="Age1" class="form-label">年紀</label>
+                            <input type="number" class="form-control" id="Age1" name="Age">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+                    <button type="button" onclick="updateHandler()" class="btn btn-primary">修改</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q"
+        crossorigin="anonymous"></script>
+    <script>
+        const apiUrl = 'http://127.0.0.1:5000/api/members'
+        const imgUrl = 'http://127.0.0.1:5000/static/avatars'
+        const loadMembers = async () => {
+            const response = await fetch(apiUrl);
+            const datas = await response.json();
+            const rowMembers = datas.map(member => {
+                return (`
+                <tr>
+                      <td>
+                        <img src="${imgUrl}/${member.FileName}" width="80px" />
+
+                        ${member.FileName
+                        ? `<img src="${imgUrl}/${member.FileName}" width="80px" />`
+                        : "無照片"}
+                     
+                     </td>
+                    <td>${member.Name}</td>
+                    <td>${member.Email}</td>
+                    <td>${member.Age}</td>
+                    <td>
+   <button type="button" onclick='editMember(${JSON.stringify(member)})' class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#MemberModal">
+  <i class="bi bi-pencil-fill"></i>
+</button>
+                   <button onclick="deleteMember(${member.MemberId})" 
+                    class="btn btn-danger"><i class="bi bi-trash-fill"></i>
+                    </button></td>
+                  
+                     </tr >
+            `)
+            })
+            document.querySelector('#membersTable tbody').innerHTML = rowMembers.join('');
+
+        }
+
+        const submitHandler = async (event) => {
+            event.preventDefault();
+
+            const formData = new FormData(document.querySelector('#memberForm'));
+            const response = await fetch(apiUrl, {
+                body: formData,
+                method: 'POST',
+            })
+            if (response.ok) {
+                alert('新增成功');
+                clearInput();
+                loadMembers();
+            }
+        }
+
+        const deleteMember = async (id) => {
+            if (!window.confirm("真的要刪除嗎?")) return;
+            const response = await fetch(`${apiUrl}/${id}`, {
+                method: 'DELETE',
+            })
+            if (response.ok) {
+                alert('刪除成功');
+                loadMembers();
+            }
+        }
+
+        const editMember = member => {
+            document.querySelector('#Name1').value = member.Name;
+            document.querySelector('#Email1').value = member.Email;
+            document.querySelector('#Age1').value = member.Age;
+            document.querySelector('#Id').value = member.MemberId;
+        }
+
+        const updateHandler = async () => {
+
+            // alert('yes')
+            const formData = new FormData(document.querySelector('#memberUpdateForm'));
+            // 將 FormData 轉為純物件
+            const jsonObject = {};
+            formData.forEach((value, key) => {
+                jsonObject[key] = value;
+            });
+
+            // 輸出 JSON 字串（可用於 RESTful API POST）
+            console.log(JSON.stringify(jsonObject));
+
+
+            // const response = await fetch(`${apiUrl}/${formData.get('MemberId')}`, {
+            //     body: formData,
+            //     method: 'PUT',
+            // })
+            // if (response.ok) {
+            //     alert('修改成功');
+            //     memModel = document.querySelector('#MemberModal');
+            //     const modalInstance = bootstrap.Modal.getInstance(memModel);
+            //     modalInstance.hide();
+
+            //     clearInput();
+            //     loadMembers();
+            // }
+        }
+
+        const clearInput = () => {
+            document.querySelectorAll('input').forEach(input => {
+                input.value = '';
+            })
+        }
+        loadMembers();
+    </script>
+</body>
+
+</html>

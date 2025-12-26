@@ -1,0 +1,33 @@
+# --- Python 虛擬環境 ---
+venv/
+.venv/
+env/
+bin/
+include/
+lib/
+share/
+pyvenv.cfg
+
+# --- Python 編譯快取 ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- 資料庫 (非常重要！不要上傳你的測試資料) ---
+# *.db
+# *.sqlite
+# *.sqlite3
+
+# --- 環境變數與密鑰 (包含密碼或 API Key 的檔案) ---
+.env
+instance/
+.flaskenv
+
+# --- 編輯器與系統設定 ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- 紀錄檔 ---
+*.log

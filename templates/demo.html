@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+</head>
+
+<body>
+    {% include '_navbar.html' %}
+    <div class="container mt-3">
+        <h2 class="display-6 fw-bold text-secondary mb-4 pb-2 border-bottom">
+            <i class="bi bi-image-fill me-2"></i>資料的傳遞與接收
+        </h2>
+        <button id="buttonQuery" class="btn btn-primary mb-3">測試 Query String 參數</button>
+        <button id="buttonPath" class="btn btn-primary mb-3">測試 Path 參數</button>
+        <button id="buttonForm" class="btn btn-primary mb-3">測試 Form Data 參數</button>
+        <button id="buttonJson" class="btn btn-primary mb-3">測試 JSON 參數</button>
+
+        <div id="divInfo" class="alert alert-info mt-5"></div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q"
+        crossorigin="anonymous"></script>
+    <script>
+        const divInfo = document.querySelector('#divInfo');
+        const btnQuery = document.querySelector('#buttonQuery');
+        const btnPath = document.querySelector('#buttonPath');
+        const btnForm = document.querySelector('#buttonForm');
+        const btnJson = document.querySelector('#buttonJson');
+
+        btnQuery.addEventListener('click', async () => {
+            const response = await fetch('/api/demo/query?name=小明&age=18');
+            const data = await response.json();
+            divInfo.innerHTML = JSON.stringify(data);
+        });
+
+        btnPath.addEventListener('click', async () => {
+            const response = await fetch('/api/demo/path/小華/25');
+            const data = await response.json();
+            divInfo.innerHTML = JSON.stringify(data);
+        });
+
+        btnForm.addEventListener('click', async () => {
+            const formData = new FormData();
+            formData.append('name', '小美');
+            formData.append('age', '22');
+
+            const response = await fetch('/api/demo/form', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            divInfo.innerHTML = JSON.stringify(data);
+        });
+
+        btnJson.addEventListener('click', async () => {
+            const payload = {
+                name: '小強',
+                age: 30
+            };
+
+            const response = await fetch('/api/demo/json', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            divInfo.innerHTML = JSON.stringify(data);
+        });
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 智能助理</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container">
+                <a class="navbar-brand" href="#">AI Project</a>
+                <a class="btn btn-primary" href="{{ url_for('page.image') }}">圖片處理</a>
+            </div>
+        </nav>
+
+        <div class="container mt-5">
+            <!-- <div class="row justify-content-center"> -->
+            <button id="buttonStart" onclick="start()" class="btn btn-primary">Ajax 開始</button>
+            <button id="buttonStart" onclick="stop()" class="btn btn-primary">Ajax 結束</button>
+            <img id="img1" src="static/images/Loading.gif" style="display: none;" alt="載入中..." />
+            <img id="img2" src="{{ url_for('static', filename='images/Loading.gif') }}" alt="載入中..." />
+            <!-- <div class="col-md-8 text-center">
+                    <div class="card shadow">
+                        <div class="card-body">
+                            <h1 class="card-title mb-4">歡迎來到 AI 智能助理</h1>
+                            <p class="card-text text-muted">這是一個結合 Flask、Bootstrap 與 AI 技術的實作範例。</p>
+                            <hr>
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary btn-lg" type="button" onclick="testApi()">
+                                    啟動 AI 辨識
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div> -->
+            <!-- </div> -->
+            <div id="divInfo" class="alert mt-5"></div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const divInfo = document.querySelector('#divInfo');
+        const imgLoader = document.querySelector('#img1');
+        const btnStart = document.querySelector('#buttonStart');
+        // const demo1 = () => {
+        //     fetch('/api/hello')
+        //         .then(response => response.json())
+        //         .then(data => divInfo.textContent = data.message)
+        //         .catch(error => console.error('Error:', error));
+
+        // }
+
+        let abortController = null;
+
+
+        const stop = () => {
+            if (abortController) {
+                abortController.abort('您終止了這次的請求');
+            }
+
+        }
+        const start = async () => {
+
+            abortController = new AbortController();
+            const signal = abortController.signal;
+
+            const timeoutId = setTimeout(() => {
+                abortController.abort('連線逾時，請稍後再試');
+            }, 3000); // 3 秒逾時
+
+            try {
+                imgLoader.style.display = 'inline';
+                btnStart.disabled = true;
+
+                const response = await fetch('/api/hello', { signal });
+                if (!response.ok) throw new Error('有錯誤，無法取得資料');
+                const data = await response.json();
+                divInfo.textContent = data.message;
+
+            } catch (err) {
+                // console.log('錯誤物件:', err);
+                // console.log('錯誤名稱:', err.name);
+                // console.log('錯誤訊息:', err.message);
+                // console.log(signal.aborted);
+
+                // 檢查是否為 AbortError
+                // if (err.name === 'AbortError') {
+                //     console.log('Request aborted:', err.message);
+                //     divInfo.textContent = err.message || '請求已被取消';
+                //     return;
+                // }
+                if (signal.aborted) {
+                    // 使用者主動終止
+                    divInfo.textContent = err;
+                } else {
+
+                    // 其他錯誤
+                    divInfo.textContent = err.message;
+                }
+            } finally {
+
+                imgLoader.style.display = 'none';
+                btnStart.disabled = false;
+                clearTimeout(timeoutId);
+
+            }
+
+            // // 1. 成功時照常處理
+            // if (response.ok) {
+            //     const datas = await response.json();
+            //     console.log(datas);
+            //     return;
+            // }
+
+            // 2. 失敗時：內部詳細記錄，外部模糊顯示
+            // 在開發者工具的 Console 裡，我們保留詳細資訊方便除錯
+            // console.error(`[Internal Debug] Status: ${response.status}, URL: ${response.url}`);
+
+            // // 根據「大類別」給予使用者模糊的回饋
+            // if (response.status >= 500) {
+            //     // 伺服器端的錯誤，統一說「系統忙碌」
+            //     alert("抱歉，系統目前暫時無法處理您的請求，請稍後再試。");
+            // } else if (response.status === 401 || response.status === 403) {
+            //     // 權限問題，引導去登入
+            //     alert("您的登入狀態已失效，請重新登入。");
+            // } else {
+            //     // 400 系列（用戶端錯誤），統一說「操作有誤」
+            //     alert("請求無法完成，請檢查您的輸入資訊或確認網路連線。");
+            // }
+
+
+            // console.log(response);
+            // response.headers.forEach((value, name) => {
+            //     console.log(`${name}: ${value}`);
+            // });
+
+
+            // console.log(`連線狀態: ${response.status} (${response.ok ? '成功' : '失敗'})`);
+            // let message = '';
+            // if (!response.ok) {
+            //     message = '伺服器回報錯誤';
+            // } else {
+            //     const data = await response.json();
+            //     message = data.message;
+            //     console.log(response);
+
+            // }
+
+            // divInfo.textContent = message;
+        }
+    </script>
+</body>
+
+</html>

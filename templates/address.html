@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+</head>
+
+<body>
+
+    {% include '_navbar.html' %}
+    <div class="container mt-3">
+        <select id="selectCity">
+        </select>
+        <select id="selectSite">
+        </select>
+        <select id="selectRoad">
+        </select>
+        <div id="div1"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q"
+        crossorigin="anonymous"></script>
+    <script>
+        const selCity = document.querySelector('#selectCity');
+        const selSite = document.querySelector('#selectSite');
+        const selRoad = document.querySelector('#selectRoad');
+        const divAddress = document.querySelector('#div1');
+        const apiUrl = 'http://127.0.0.1:5000/api';
+        (async () => {
+            const response = await fetch(`${apiUrl}/cities`);
+            if (!response.ok) {
+                throw new Error('api 串接失敗');
+            }
+            const datas = await response.json();
+
+            const opts = datas.map((city) => {
+                return `
+                  <option value="${city}">${city}</option>
+               `
+            })
+
+            selCity.innerHTML = opts.join("");
+            //載入鄉鎮區
+            loadSite();
+        })();
+
+        //根據縣市讀取鄉鎮區的資料
+        const loadSite = async () => {
+            // const response = await fetch(`${apiUrl}/sites/${selCity.value}`);
+            const response = await fetch(`${apiUrl}/districts?city=${selCity.value}`);
+            const datas = await response.json();
+            const optSites = datas.map(site => {
+                return `
+                  <option value="${site}">${site}</option>
+               `
+            })
+
+            selSite.innerHTML = optSites.join("");
+
+            //載入路名
+            loadRoad();
+        }
+
+        //根據鄉鎮區讀取路名
+        const loadRoad = async () => {
+
+            // const response = await fetch(`${apiUrl}/roads/${selSite.value}`);
+            const response = await fetch(`${apiUrl}/roads?site_id=${selSite.value}`);
+            const datas = await response.json();
+            const optRoads = datas.map(road => {
+                return `
+                    <option value="${road}">${road}</option>
+                `
+            })
+            selRoad.innerHTML = optRoads.join("");
+        }
+
+        //事件發生要執行函式
+        selCity.addEventListener('change', () => {
+            //載入鄉鎮區
+            loadSite();
+            divAddress.textContent = selCity.value;
+        })
+
+        selSite.addEventListener('change', () => {
+            //載入路名
+            loadRoad();
+            divAddress.textContent = `${selSite.value}`;
+        })
+
+        selRoad.addEventListener('change', () => {
+            divAddress.textContent = `${selSite.value} ${selRoad.value}`;
+        })
+
+    </script>
+</body>
+
+</html>
