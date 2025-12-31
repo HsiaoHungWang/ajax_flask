@@ -51,8 +51,73 @@
         //             }, 1000);
         //         }, 1000);
         //     }, 1000);
-
         // }, 1000);
+
+
+        function printSomething(data) {
+            const promise = new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    resolve(data);
+                }, 1000)
+            })
+            return promise;
+        }
+
+        // console.log(printSomething("A"));  //Promise物件
+        // printSomething("A")
+        //     .then(result => {
+        //         console.log(result);
+        //         return printSomething("B")
+        //     })
+        //     .then(result => {
+        //         console.log(result);
+        //         return printSomething("C")
+        //     })
+        //     .then(result => {
+        //         console.log(result);
+        //         return printSomething("D")
+        //     })
+        //     .then(result => {
+        //         console.log(result);
+        //     })
+
+
+        // async/await
+        async function callPromise() {
+            let result = await printSomething("A")
+            console.log(result);
+            result = await printSomething("B")
+            console.log(result);
+            result = await printSomething("C")
+            console.log(result);
+            result = await printSomething("D")
+            console.log(result);
+
+        }
+
+
+        callPromise();
+
+
+        // //建立 Promise 物件
+        // const promise = new Promise((resolve, reject) => {
+        //     //非同步程式碼寫在這裡
+
+        //     if (true) {
+        //         resolve('成功');
+        //     } else {
+        //         reject('失敗');
+        //     }
+        // })
+
+
+        // //Promise物件使用
+        // console.log(promise);
+        // promise
+        //     .then(data => console.log(data))
+        //     .catch(error => console.log(error))
+        //     .finally(() => console.log('end'));
+
 
         // promise
         //     .then(() => {
