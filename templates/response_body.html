@@ -131,6 +131,14 @@
             URL.revokeObjectURL(theImg.src);
         };
 
+        //無數個option組合而成=>會產生 options 的集合
+        selTask.addEventListener('change', () => {
+            // const idx = selTask.selectedIndex;
+            // console.log(selTask.options[idx].text);
+            // console.log(selTask.options[idx].value);
+            console.log(selTask.value);
+        })
+
 
     </script>
 </body>
