@@ -52,7 +52,13 @@
         btnStart.addEventListener('click', async () => {
             const apiUrl = 'http://127.0.0.1:5000/api/hello';
 
+
+
+
             try {
+                imgLoader.style.display = 'inline' //顯示執行中的圖示
+                btnStart.disabled = true;         //停用按鈕功能
+
                 const response = await fetch(apiUrl);
                 if (!response.ok) throw new Error('有錯誤，無法取得資料!!');
 
@@ -62,6 +68,8 @@
             } catch (error) {
                 divInfo.textContent = error.message;
             } finally {
+                imgLoader.style.display = 'none' //隱藏執行中的圖示
+                btnStart.disabled = false;         //啟用按鈕功能
 
             }
 
