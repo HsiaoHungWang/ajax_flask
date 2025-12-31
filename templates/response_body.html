@@ -36,6 +36,8 @@
                 JSON處理
             </h3>
             <button id="buttonJson" class="btn btn-primary">讀取JSON</button>
+            <select id="selectTask">
+            </select>
             <div class="mt-3">
                 <img id="img1" class="img-fluid rounded border shadow-sm" style="width: 300px; height: auto;"
                     src="static/images/empty.png" />
@@ -56,6 +58,8 @@
         const btnJson = document.querySelector('#buttonJson');
         const divInfo = document.querySelector('#divInfo');
         const theImg = document.querySelector('#img1');
+        const selTask = document.querySelector('#selectTask');
+
 
 
         //呼叫回傳文字的 api 
@@ -95,9 +99,30 @@
             }
         })
 
-
+        //呼叫回傳JSON的 api
         btnJson.addEventListener('click', async () => {
+            const apiUrl = 'http://127.0.0.1:5000/api/json';
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error('有錯')
 
+                const datas = await response.json();
+
+                let opts = '';
+                datas.forEach(todo => {
+                    opts += `<option value="${todo.id}">${todo.task}</option>`
+                });
+                selTask.innerHTML = opts;
+
+
+                divInfo.textContent = JSON.stringify(datas);
+
+
+            } catch (error) {
+                divInfo.textContent = error.message;
+            } finally {
+
+            }
         });
 
 
