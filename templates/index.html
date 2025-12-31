@@ -50,7 +50,7 @@
 
 
         btnStart.addEventListener('click', async () => {
-            const apiUrl = 'http://127.0.0.1:5000/api/hello';
+            const apiUrl = 'http://127.0.0.1:5000/api/hello1';
 
             //async await
             const response = await fetch(apiUrl);
@@ -66,6 +66,13 @@
                 }
 
             } else {
+                if (response.status >= 500) {
+                    console.log('伺服器發生錯誤!!')
+                } else if (response.status >= 400) {
+                    console.log('呼叫錯誤!!')
+                } else {
+                    console.log('請聯絡客服!!')
+                }
                 console.log('status：', response.status);
             }
 
