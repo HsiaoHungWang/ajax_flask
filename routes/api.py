@@ -7,6 +7,7 @@ from resources.address_api import  CityResource, DistrictResource, RoadResource
 from resources.demo_api import QueryStringDemo, PathDemo, FormDataDemo, JsonDemo, ImageUploadDemo
 from resources.spot_api import Spots, SpotCategoryStats, SpotsByDistrict, SpotTitleSearch
 
+from resources.user_api import Users, User
 
 api_bp = Blueprint('api', __name__)
 api = Api(api_bp)
@@ -25,6 +26,12 @@ api.add_resource(JsonResource, '/json')
 api.add_resource(Items, '/items')
 # http://127.0.0.1:5000/api/items/1
 api.add_resource(Item, '/items/<int:id>')
+
+# http://127.0.0.1:5000/api/users
+api.add_resource(Users, '/users')
+# http://127.0.0.1:5000/api/users/5
+api.add_resource(User, '/users/<int:user_id>')
+
 
 api.add_resource(CityResource, '/cities')
 api.add_resource(DistrictResource, '/districts')
