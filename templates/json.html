@@ -18,22 +18,108 @@
     {% include '_navbar.html' %}
     <div class="container mt-3">
         <h3>JSON 練習</h3>
-        <div id="userList">
+        <table id="userList" class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>姓名</th>
+                    <th>電子郵件</th>
+                    <th>年紀</th>
+                </tr>
+            </thead>
+            <tbody>
 
-        </div>
+
+            </tbody>
+
+        </table>
+        <ul id="ul1">
+        </ul>
+        <select>
+            <option>aaa</option>
+            <option>bbb</option>
+        </select>
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
             integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q"
             crossorigin="anonymous"></script>
         <script src="/static/scripts/travel.js"></script>
         <script>
+
+            console.log(spots);
+
+            // const data = { "users": users };
+
+            // console.log(data.users[1].age); //34
+
+            // //const datas = [索引值:value,1:value,2:value]陣列
+            // //datas[0]
+
+            // //users => [] => array
+            // console.log(users[0]); //{ "id": 1, "UserName": "Alice", "UserEmail": "alice@company.com", "age": 28 }
+
+
+            // //const obj = {"key1":value1,"key2":value2} 物件
+            // //obj.key1 => value1
+            // //obj["key2"] => value2
+
+            // console.log(users[0].UserName); //Alice
+            // console.log(users[0]["age"]); //28
+
+            //如何讀取 users JSON 中的資料
+            //console.log(users.length);
+            // for (let i = 0, max = users.length; i < max; i++) {
+
+            // }
+            //for...of...
+            //for...in...
+
             const users = [
                 { "id": 1, "UserName": "Alice", "UserEmail": "alice@company.com", "age": 28 },
                 { "id": 2, "UserName": "Bob", "UserEmail": "bob@company.com", "age": 34 },
                 { "id": 3, "UserName": "Charlie", "UserEmail": "charlie@company.com", "age": 22 }]
 
-            //如何讀取 users JSON 中的資料
+            //array 物件提供的方法 forEach
+            //<li>Bob</li>
+            const theUl = document.querySelector('#ul1');
+
+
+            let lis = '';
+            let tds = '';
+            //  <tr>
+            //         <td>1</td>
+            //         <td>Bob</td>
+            //         <td>Bob@company.com</td>
+            //         <td>30</td>
+            //     </tr>
+            users.forEach((user, index, array) => {
+                // console.log(index); //0 1 2
+                // console.log(user); //{}  {}  {}
+                // console.log(user.id);
+                // console.log(user.UserName);
+                // console.log(user.UserEmail);
+                // console.log(user.age);
+                lis += `<li>${user.UserName}</li>`;
+
+                //解構賦值
+                const { id, UserName, UserEmail, age } = user;
+
+                tds += `
+                  <tr>
+                     <td>${id}</td>
+                     <td>${UserName}</td>
+                     <td>${UserEmail}</td>
+                     <td>${age}</td>
+                 </tr>  
+                
+                `;
+            })
             //如何將讀出的資料顯示在網頁上
+            theUl.innerHTML = lis;
+            const tb = document.querySelector('#userList>tbody');
+            tb.innerHTML = tds;
+
+
 
 
 
