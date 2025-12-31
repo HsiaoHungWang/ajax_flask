@@ -8,7 +8,10 @@ class HelloWorld(Resource):
     
 class TextResource(Resource):
     def get(self):
-        return "RESTful API"
+        response = make_response("RESTful API", 200)
+        response.mimetype = "text/plain"
+        return response
+        # return "RESTful API"
     
 class ImageResource(Resource):
     def get(self):
@@ -50,6 +53,4 @@ class JsonResource(Resource):
 
 
 
-        # response = make_response("RESTful API", 200)
-        # response.mimetype = "text/plain"
-        # return response
+     
