@@ -50,13 +50,28 @@
 
 
         btnStart.addEventListener('click', async () => {
-            const apiUrl = 'http://127.0.0.1:5000/api/hello';
+            const apiUrl = 'http://127.0.0.1:5000/api/image';
 
 
             //async await
             const response = await fetch(apiUrl);
-            const data = await response.json();
-            divInfo.innerHTML = `<h2>${data.message}</h2>`;
+            //先確認 ok 為 true
+            if (response.ok) {
+                //再確認格式是否正確
+                const contentType = response.headers.get('Content-Type');
+                if (contentType && contentType.includes('application/json')) {
+                    const data = await response.json();
+                    divInfo.innerHTML = `<h2>${data.message}</h2>`;
+                } else {
+                    console.log('回傳資料格式不正確!!')
+                }
+
+            } else {
+                console.log('status：', status);
+            }
+
+
+
 
 
 
