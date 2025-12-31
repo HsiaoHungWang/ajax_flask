@@ -21,7 +21,7 @@
         <div class="container mt-5">
             <!-- <div class="row justify-content-center"> -->
             <button id="buttonStart" class="btn btn-primary">Ajax 開始</button>
-            <button id="buttonStart" class="btn btn-primary">Ajax 結束</button>
+            <button id="buttonEnd" class="btn btn-primary">Ajax 結束</button>
             <img id="img1" src="static/images/Loading.gif" style="display: none;" alt="載入中..." />
 
 
@@ -53,7 +53,19 @@
             const apiUrl = 'http://127.0.0.1:5000/api/hello';
             console.log(fetch(apiUrl));
             fetch(apiUrl)
-                .then(res => console.log(res))
+                .then(res => {
+                    // console.log(res);
+                    // console.log(res.headers.get('Content-Type'));
+                    // console.log(res.headers.get('Content-Length'));
+                    // console.log(res.status);
+                    // console.log(res.ok);
+                    // console.log(res.body);
+                    //console.log(res.json());  //讀取 body 中 json 格式的資料，回傳的又是一個promise物件
+                    return res.json();
+                })
+                .then(data => {
+                    console.log(data);
+                })
 
         })
 
