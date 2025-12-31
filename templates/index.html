@@ -35,6 +35,32 @@
         const imgLoader = document.querySelector('#img1');
         const btnStart = document.querySelector('#buttonStart');
 
+
+        // function hi(a){
+        //
+        // }
+
+        // (a,b)=>{} ()=>{}
+        // a => {
+        //    ....
+        //    ....
+        //}
+
+        // a => console.log(a)
+
+
+        btnStart.addEventListener('click', () => {
+            const apiUrl = 'http://127.0.0.1:5000/api/hello';
+            console.log(fetch(apiUrl));
+            fetch(apiUrl)
+                .then(res => console.log(res))
+
+        })
+
+
+
+
+
         //callback 回呼 => 非同步
         // setTimeout(function () {
         //     //傳送訊息給A
@@ -54,14 +80,14 @@
         // }, 1000);
 
 
-        function printSomething(data) {
-            const promise = new Promise((resolve, reject) => {
-                setTimeout(() => {
-                    resolve(data);
-                }, 1000)
-            })
-            return promise;
-        }
+        // function printSomething(data) {
+        //     const promise = new Promise((resolve, reject) => {
+        //         setTimeout(() => {
+        //             resolve(data);
+        //         }, 1000)
+        //     })
+        //     return promise;
+        // }
 
         // console.log(printSomething("A"));  //Promise物件
         // printSomething("A")
@@ -82,21 +108,21 @@
         //     })
 
 
-        // async/await
-        async function callPromise() {
-            let result = await printSomething("A")
-            console.log(result);
-            result = await printSomething("B")
-            console.log(result);
-            result = await printSomething("C")
-            console.log(result);
-            result = await printSomething("D")
-            console.log(result);
+        // // async/await
+        // async function callPromise() {
+        //     let result = await printSomething("A")
+        //     console.log(result);
+        //     result = await printSomething("B")
+        //     console.log(result);
+        //     result = await printSomething("C")
+        //     console.log(result);
+        //     result = await printSomething("D")
+        //     console.log(result);
 
-        }
+        // }
 
 
-        callPromise();
+        // callPromise();
 
 
         // //建立 Promise 物件
