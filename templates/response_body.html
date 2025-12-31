@@ -65,7 +65,7 @@
                 const response = await fetch(apiUrl);
                 if (!response.ok) throw new Error('有錯');
 
-                console.log(response.headers.get('Content-Type'));
+                // console.log(response.headers.get('Content-Type'));
 
                 const data = await response.text();
                 divInfo.textContent = data;
@@ -78,8 +78,21 @@
         });
 
 
+        //呼叫回傳圖的 api
         btnLoad.addEventListener('click', async () => {
+            const apiUrl = 'http://127.0.0.1:5000/api/image';
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error('有錯')
 
+                const datas = await response.blob();
+                theImg.src = URL.createObjectURL(datas);
+
+            } catch (error) {
+                divInfo.textContent = error.message;
+            } finally {
+
+            }
         })
 
 
