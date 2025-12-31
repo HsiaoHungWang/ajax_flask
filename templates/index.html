@@ -52,29 +52,68 @@
         btnStart.addEventListener('click', async () => {
             const apiUrl = 'http://127.0.0.1:5000/api/hello1';
 
-            //async await
-            const response = await fetch(apiUrl);
-            //先確認 ok 為 true
-            if (response.ok) {
-                //再確認格式是否正確
-                const contentType = response.headers.get('Content-Type');
-                if (contentType && contentType.includes('application/json')) {
-                    const data = await response.json();
-                    divInfo.innerHTML = `<h2>${data.message}</h2>`;
-                } else {
-                    console.log('回傳資料格式不正確!!')
-                }
+            try {
+                //有可能發生錯誤
+                //async await
+                const response = await fetch(apiUrl);
 
-            } else {
-                if (response.status >= 500) {
-                    console.log('伺服器發生錯誤!!')
-                } else if (response.status >= 400) {
-                    console.log('呼叫錯誤!!')
-                } else {
-                    console.log('請聯絡客服!!')
-                }
-                console.log('status：', response.status);
+                //先確認 ok 為 true
+                if (!response.ok) throw new Error('有錯誤，無法取得資料!!');
+
+                const data = await response.json();
+                divInfo.innerHTML = `<h2>${data.message}</h2>`;
+
+                // //先確認 ok 為 true
+                // if (response.ok) {
+                //     //再確認格式是否正確
+                //     const contentType = response.headers.get('Content-Type');
+                //     if (contentType && contentType.includes('application/json')) {
+                //         const data = await response.json();
+                //         divInfo.innerHTML = `<h2>${data.message}</h2>`;
+                //     } else {
+                //         console.log('回傳資料格式不正確!!')
+                //     }
+
+                // } else {
+                //     if (response.status >= 500) {
+                //         console.log('伺服器發生錯誤!!')
+                //     } else if (response.status >= 400) {
+                //         console.log('呼叫錯誤!!')
+                //     } else {
+                //         console.log('請聯絡客服!!')
+                //     }
+                //     console.log('status：', response.status);
+                // }
+
+            } catch (error) {
+                divInfo.textContent = error.message;
+            } finally {
+                console.log('請求結束!!')
             }
+
+            // //async await
+            // const response = await fetch(apiUrl);
+            // //先確認 ok 為 true
+            // if (response.ok) {
+            //     //再確認格式是否正確
+            //     const contentType = response.headers.get('Content-Type');
+            //     if (contentType && contentType.includes('application/json')) {
+            //         const data = await response.json();
+            //         divInfo.innerHTML = `<h2>${data.message}</h2>`;
+            //     } else {
+            //         console.log('回傳資料格式不正確!!')
+            //     }
+
+            // } else {
+            //     if (response.status >= 500) {
+            //         console.log('伺服器發生錯誤!!')
+            //     } else if (response.status >= 400) {
+            //         console.log('呼叫錯誤!!')
+            //     } else {
+            //         console.log('請聯絡客服!!')
+            //     }
+            //     console.log('status：', response.status);
+            // }
 
 
 
