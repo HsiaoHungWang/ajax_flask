@@ -34,6 +34,8 @@
         const divInfo = document.querySelector('#divInfo');
         const imgLoader = document.querySelector('#img1');
         const btnStart = document.querySelector('#buttonStart');
+        const btnEnd = document.querySelector('#buttonEnd');
+
 
 
         // function hi(a){
@@ -48,18 +50,24 @@
 
         // a => console.log(a)
 
+        let abortController = null;
 
         btnStart.addEventListener('click', async () => {
             const apiUrl = 'http://127.0.0.1:5000/api/hello';
+            abortController = new AbortController();
+            const signal = abortController.signal;
 
-
-
+            //3秒內沒有回傳結果就終止fetch的執行
+            const timer = setTimeout(() => {
+                abortController.abort();
+            }, 10000)
 
             try {
                 imgLoader.style.display = 'inline' //顯示執行中的圖示
                 btnStart.disabled = true;         //停用按鈕功能
 
-                const response = await fetch(apiUrl);
+                // const response = await fetch(apiUrl);
+                const response = await fetch(apiUrl, { signal });
                 if (!response.ok) throw new Error('有錯誤，無法取得資料!!');
 
                 const data = await response.json();
@@ -70,12 +78,18 @@
             } finally {
                 imgLoader.style.display = 'none' //隱藏執行中的圖示
                 btnStart.disabled = false;         //啟用按鈕功能
-
+                clearTimeout(timer); //清除計時的功能
             }
 
 
         })
 
+        btnEnd.addEventListener('click', () => {
+            if (abortController) {
+                abortController.abort(); //取消 fetch() 的執行
+            }
+
+        })
 
 
         // try {
