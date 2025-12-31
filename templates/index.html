@@ -54,8 +54,10 @@
 
         btnStart.addEventListener('click', async () => {
             const apiUrl = 'http://127.0.0.1:5000/api/hello';
+
+            //停止 fetch() 的執行，需要先建立一個 AbortController 物件
             abortController = new AbortController();
-            const signal = abortController.signal;
+            const signal = abortController.signal; //產生一個訊號
 
             //3秒內沒有回傳結果就終止fetch的執行
             const timer = setTimeout(() => {
@@ -67,7 +69,7 @@
                 btnStart.disabled = true;         //停用按鈕功能
 
                 // const response = await fetch(apiUrl);
-                const response = await fetch(apiUrl, { signal });
+                const response = await fetch(apiUrl, { signal }); //把訊號放進fetch()中，之後就可以停止fetch()了
                 if (!response.ok) throw new Error('有錯誤，無法取得資料!!');
 
                 const data = await response.json();
