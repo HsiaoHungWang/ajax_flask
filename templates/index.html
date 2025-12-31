@@ -61,8 +61,8 @@
 
             //3秒內沒有回傳結果就終止fetch的執行
             const timer = setTimeout(() => {
-                abortController.abort();
-            }, 10000)
+                abortController.abort('api 執行逾時');
+            }, 3000)
 
             try {
                 imgLoader.style.display = 'inline' //顯示執行中的圖示
@@ -76,7 +76,13 @@
                 divInfo.innerHTML = `<h2>${data.message}</h2>`;
 
             } catch (error) {
-                divInfo.textContent = error.message;
+                // console.log(error);
+                if (signal.aborted) { //true 表示取消了
+                    divInfo.textContent = error;
+                } else {
+                    divInfo.textContent = error.message;
+                }
+
             } finally {
                 imgLoader.style.display = 'none' //隱藏執行中的圖示
                 btnStart.disabled = false;         //啟用按鈕功能
@@ -88,7 +94,7 @@
 
         btnEnd.addEventListener('click', () => {
             if (abortController) {
-                abortController.abort(); //取消 fetch() 的執行
+                abortController.abort('您停止了程式的執行'); //取消 fetch() 的執行
             }
 
         })
