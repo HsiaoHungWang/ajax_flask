@@ -63,14 +63,37 @@
         const theImg = document.querySelector('#img1');
 
         btnQuery.addEventListener('click', async () => {
+            const api = `http://127.0.0.1:5000/api/demo/query?name=${inpName.value}&age=${inpAge.value}`
 
+            const response = await fetch(api);
+            const user = await response.json();
+
+            //JSON字串轉成JSON物件  JSON.parse('json')
+            //JSON物件轉成JSON字串  JSON.stringify(datas)
+
+            const info = `<ul><li>姓名：${user.name}</li><li>年紀：${user.age}</li></ul>`;
+            //textContent、innerText
+            divInfo.innerHTML = info; //JSON.stringify(datas);  //`姓名：${inpName.value}，年紀：${inpAge.value}`;
         });
 
         btnPath.addEventListener('click', async () => {
+            const api = `http://127.0.0.1:5000/api/demo/path/${inpName.value}/${inpAge.value}`;
+            const response = await fetch(api);
+            const user = await response.json();
+
+            divInfo.innerHTML = `<ul><li>方法：${user.method}</li><li>姓名：${user.name}</li><li>年紀：${user.age}</li></ul>`;
 
         });
 
         btnForm.addEventListener('click', async () => {
+            const formData = new FormData(frmUser);
+
+            //測試從FormData讀出資料
+            for (const part of formData.entries()) {
+                console.log(part[0]);
+                console.log(part[1]);
+            }
+
 
         });
 
