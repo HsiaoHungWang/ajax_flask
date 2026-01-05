@@ -3,13 +3,15 @@ from flask_restful import Resource
 import os, uuid
 from werkzeug.utils import secure_filename
 
+# http://127.0.0.1:5000/api/demo/query?name=Tom&age=27
 class QueryStringDemo(Resource):
     def get(self):
-        # 使用 request.args 取得資料
+        # 使用 request.args 取得 QueryString 資料
         name = request.args.get('name', '預設值')
         age = request.args.get('age')
         return {"method": "QueryString", "name": name, "age": age}, 200
-
+    
+# http://127.0.0.1:5000/api/demo/path/John/25
 class PathDemo(Resource):
     def get(self, name, age): # 變數會直接作為參數傳入
         return {"method": "PathParameter", "name": name, "age": age}, 200
