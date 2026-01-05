@@ -24,6 +24,9 @@
                 <div class="col-4">
                     <input type="number" name="age" id="userAge" class="form-control" placeholder="輸入年紀">
                 </div>
+                <div class="col-4">
+                    <input type="text" name="email" id="userEmail" class="form-control" placeholder="輸入電子郵件">
+                </div>
             </div>
         </form>
         <button id="buttonQuery" class="btn btn-primary mb-3">透過 URL QueryString 傳遞資料</button>
@@ -86,13 +89,37 @@
         });
 
         btnForm.addEventListener('click', async () => {
+            //方法一
+            //把表單資料放進了formData
             const formData = new FormData(frmUser);
+            const api = "http://127.0.0.1:5000/api/demo/form";
+            const response = await fetch(api, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            //{
+            //     "method": "FormData",
+            //     "received": {
+            //         "name": "Mary",
+            //         "age": "25"
+            //     }
+            // }
+            divInfo.innerHTML = `<ul><li>方法：${data.method}</li><li>姓名：${data.received.name}</li><li>年紀：${data.received.age}</li></ul>`;
+
+
+
+
+            //方法二
+            // const formData = new FormData();
+            // formData.append('userName', inpName.value);
+            // formData.append('userAge', inpAge.value);
 
             //測試從FormData讀出資料
-            for (const part of formData.entries()) {
-                console.log(part[0]);
-                console.log(part[1]);
-            }
+            // for (const part of formData.entries()) {
+            //     console.log(part[0]);
+            //     console.log(part[1]);
+            // }
 
 
         });
