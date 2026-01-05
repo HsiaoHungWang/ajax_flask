@@ -25,7 +25,7 @@
                     <input type="number" name="age" id="userAge" class="form-control" placeholder="輸入年紀">
                 </div>
                 <div class="col-4">
-                    <input type="text" name="email" id="userEmail" class="form-control" placeholder="輸入電子郵件">
+                    <input type="text" name="feedback" id="feedback" class="form-control" placeholder="說.....">
                 </div>
             </div>
         </form>
@@ -61,6 +61,8 @@
         const inpName = document.querySelector('#userName');
         const inpAge = document.querySelector('#userAge');
         const frmUser = document.querySelector('#userForm');
+        const inpFeedback = document.querySelector('#feedback');
+
 
         const divInfo = document.querySelector('#divInfo');
         const theImg = document.querySelector('#img1');
@@ -126,15 +128,70 @@
 
         btnJson.addEventListener('click', async () => {
             const payload = {
-                name: 'Steve',
-                age: 30
+                name: inpName.value,
+                age: inpAge.value,
+                feedback: inpFeedback.value
             };
+            const api = "http://127.0.0.1:5000/api/demo/json";
+
+            const response = await fetch(api, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await response.json();
+
+            divInfo.innerHTML = `<ul><li>方法：${data.method}</li><li>姓名：${data.received.name}</li><li>年紀：${data.received.age}</li>
+                <li>${data.sentiment}:${data.score}</li>
+                <li>${data.suggestion}</li></ul>`;
+
         });
 
 
 
         //檔案上傳
         btnUpload.addEventListener('click', async () => {
+            //取得檔案
+            const file = fileInput.files[0];
+            //檢查是否選擇了檔案
+            if (!file) {
+                alert('請選擇檔案');
+                return;
+            }
+            //把檔案傳給API
+            //先把檔案放進FormData
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const api = "http://127.0.0.1:5000/api/demo/image";
+
+            const response = await fetch(api, {
+                method: 'POST',
+                body: formData
+            });
+
+            let info = "有錯誤";
+
+            // {
+            //     "message": "檔案上傳成功",
+            //     "url": "static\\uploads\\2bcf89c61c18494f938ac508eb83cf54.png"
+            // }
+
+            if (response.ok) {
+                const data = await response.json();
+
+                info = `
+                   <p>${data.message}</p>
+                   <p>${data.description}</p>
+                   <a href="${data.url}">瀏覽檔案</a>
+                   
+                `;
+            }
+
+            divInfo.innerHTML = info;
+
 
         })
 
