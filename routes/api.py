@@ -6,6 +6,7 @@ from resources.member_api import MembersResource, MemberResource, MemberExistChe
 from resources.address_api import  CityResource, DistrictResource, RoadResource
 from resources.demo_api import QueryStringDemo, PathDemo, FormDataDemo, JsonDemo, ImageUploadDemo
 from resources.spot_api import Spots, SpotCategoryStats, SpotsByDistrict, SpotTitleSearch
+from resources.attraction_api import Attractions, AttractionTitleSearch
 
 
 api_bp = Blueprint('api', __name__)
@@ -41,6 +42,9 @@ api.add_resource(ImageUploadDemo, '/demo/image')
 api.add_resource(Spots, '/spots')
 api.add_resource(SpotCategoryStats, '/categories')
 api.add_resource(SpotsByDistrict, '/spot-district')
+
+api.add_resource(Attractions, '/attractions')
+api.add_resource(AttractionTitleSearch, '/attraction-title')
 
 
 api.add_resource(MembersResource, '/members')

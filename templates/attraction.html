@@ -62,65 +62,103 @@
         const divList = document.querySelector('#div1');
         const inpSearch = document.querySelector('#InputSearch');
 
+        const DEFAULT_IMAGE = '/static/images/empty.png';
+
         const search_params = {
-            "keyword": "公園",
-            "category_id": 0,
+            "keyword": "",
             "page": 1,
             "per_page": 9,
-            "sort_by": "SpotId",
+            "sort_by": "AttractionID",
             "sort_order": "asc"
         }
 
+        // AJAX 1：搜尋框「自動完成」
+        // 每次使用者在輸入框打字（input 事件）都會觸發一次，
+        // 呼叫後端 /api/attraction-title，用目前輸入的文字去查詢符合的景點名稱
         inpSearch.addEventListener('input', async (event) => {
             console.log(event.target);
-            const apiUrl1 = 'http://127.0.0.1:5000/api/title'
+
+            // 1. 組出要呼叫的 API 網址，把使用者輸入的字當成 keyword 參數帶過去
+            const apiUrl1 = 'http://127.0.0.1:5000/api/attraction-title'
             const url = `${apiUrl1}?keyword=${event.target.value}`;
+
+            // 2. fetch 送出 GET 請求；await 代表「先在這裡等，直到伺服器回應」
             const response = await fetch(url);
+
+            // 3. 把伺服器回傳的 JSON 字串解析成 JavaScript 陣列
             const titles = await response.json();
 
+            // 4. 把每個景點名稱轉成一個按鈕的 HTML 字串
+            //    點下按鈕時會呼叫 clickHandler()，帶入該景點名稱
             const htmlTitles = titles.map(title => `<button onclick="clickHandler('${title}')" type="button" class="list-group-item  list-group-item-action">${title}</button>`);
+
+            // 5. 把組好的按鈕 HTML 塞進下拉建議清單的容器裡，畫面就會顯示出來
             divList.innerHTML = htmlTitles.join('');
         })
 
+        // AJAX 2：讀取景點卡片列表
+        // 這是整個頁面「查資料、畫卡片」的核心函式，
+        // 會依照目前的 search_params（關鍵字、頁碼、排序方式...）向後端要資料
         const loadDatas = async () => {
+            // 1. 把 search_params 物件轉成網址的 QueryString，
+            //    例如 { keyword: "陽明山", page: 1 } 會變成 "keyword=陽明山&page=1"
             const queryString = new URLSearchParams(search_params).toString();
 
-            const apiUrl = `http://127.0.0.1:5000/api/spots?${queryString}`
+            // 2. 呼叫後端 /api/attractions，帶上上面組好的查詢條件
+            const apiUrl = `http://127.0.0.1:5000/api/attractions?${queryString}`
             const response = await fetch(apiUrl);
+
+            // 3. 解析回傳的 JSON，格式為 { total_pages, total_count, data: [...] }
             const datas = await response.json();
 
+            // 4. 依照總頁數重新畫分頁按鈕
             pagination(datas.total_pages);
 
-            const cards = datas.data.map(spot => {
-                const { SpotId, SpotTitle, Address, SpotDescription, SpotImage } = spot;
+            // 5. 把每一筆景點資料轉成一張卡片的 HTML，最後統一塞進畫面
+            const cards = datas.data.map(attraction => {
+                const { AttractionID, AttractionName, City, Town, StreetAddress, Description, Image } = attraction;
+                const address = `${City || ''}${Town || ''}${StreetAddress || ''}`;
+                const description = Description ? Description.substring(0, 100) : '';
                 return (
                     `<div class="col">
-                        <div class="card">
-                            <img src="${SpotImage}" class="card-img-top" alt="${SpotTitle}" />
-                            <div class="card-body">
-                                <h5 class="card-title">${SpotId} ${SpotTitle}</h5>
-                                <p class="card-text">${SpotDescription.substring(0, 100)}</p>
+                        <div class="card h-100">
+                            <img src="${Image || DEFAULT_IMAGE}" class="card-img-top" alt="${AttractionName}" style="height: 200px; object-fit: cover;" />
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">${AttractionName}</h5>
+                                <p class="card-text flex-grow-1">${description}</p>
                             </div>
                             <div class="card-footer">
-                                <small class="text-body-secondary">${Address}</small>
+                                <small class="text-body-secondary">${address}</small>
                             </div>
                         </div>
                     </div>
                 `)
             })
 
+            // 6. innerHTML 一次性覆蓋，把卡片畫到 #divSpots 容器裡
             div1.innerHTML = cards.join('');
         }
 
+        // 換頁：更新 search_params.page，然後重新呼叫 AJAX (loadDatas) 拿新資料
         const pageChange = page => {
             search_params.page = page;
             loadDatas();
         }
 
+        // 點下自動完成清單裡的某個景點名稱時：
+        // 把名稱填進輸入框、清空下拉清單，並直接以該名稱重新查詢（觸發 AJAX）
         const clickHandler = title => {
             inpSearch.value = title;
             divList.innerHTML = '';
+
+            search_params.keyword = title;
+            search_params.page = 1;
+            loadDatas();
         }
+
+        // 在輸入框按下 Enter 鍵（keyCode 13）時，才真正送出關鍵字搜尋（觸發 AJAX）
+        // 跟上面 'input' 事件不同：'input' 是每打一個字就查自動完成建議，
+        // 這裡是按 Enter 才去查詢完整的卡片列表
         inpSearch.addEventListener('keyup', event => {
             if (event.which === 13) {
                 search_params.keyword = event.target.value;
@@ -128,14 +166,7 @@
                 loadDatas();
             }
         })
-        // const search = event => {
 
-        //     if (event.which === 13) {
-        //         search_params.keyword = event.target.value;
-        //         search_params.page = 1;
-        //         loadDatas();
-        //     }
-        // }
 
 
         //建立分頁按鈕
@@ -152,6 +183,8 @@
             }
             ulPagination.innerHTML = liPage;
         }
+
+        // 頁面一載入就先呼叫一次 loadDatas()，取得第一頁的景點資料並顯示
         loadDatas();
     </script>
 </body>

@@ -8,4 +8,5 @@ from .member_model import Member
 from .user_model import User
 from .address_model import Address
 from .spot_model import Spot
-from .category_model import SpotsCategory    
+from .category_model import SpotsCategory
+from .attraction_model import Attraction, AttractionImage

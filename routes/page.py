@@ -26,9 +26,9 @@ def members():
 def demo():
     return render_template('request_data.html')
 
-@page_bp.route('/spots')
-def spot():
-    return render_template('spots.html')
+@page_bp.route('/attraction')
+def attraction():
+    return render_template('attraction.html')
 
 @page_bp.route('/barchart')
 def barchart():
