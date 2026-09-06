@@ -1,5 +1,6 @@
 from flask import Blueprint
 from flask_restful import Api
+from flask_sock import Sock
 from resources.hello_api import HelloWorld, TextResource, ImageResource, JsonResource  #hello.py 檔案中的 HelloWorld 類別名稱
 from resources.items_api import Items, Item  
 from resources.member_api import MembersResource, MemberResource, MemberExistCheck
@@ -9,10 +10,15 @@ from resources.spot_api import Spots, SpotCategoryStats, SpotsByDistrict, SpotTi
 from resources.attraction_api import Attractions, AttractionTitleSearch
 from resources.attraction_recognition_api import AttractionImageRecognition
 from resources.attraction_recognition_stream_api import attraction_recognize_stream
+from resources.attraction_recognition_ws_api import init_ws
 
 
 api_bp = Blueprint('api', __name__)
 api = Api(api_bp)
+
+# WebSocket 路由（flask_sock），掛在同一個 api 藍圖上 → /api/attraction/recognize-ws
+sock = Sock(api_bp)
+init_ws(sock)
 
 
 # http://127.0.0.1:5000/api/  #api哪裡來的

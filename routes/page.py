@@ -38,6 +38,10 @@ def recognize():
 def recognize_stream():
     return render_template('recognize_stream.html')
 
+@page_bp.route('/recognize-ws')
+def recognize_ws():
+    return render_template('recognize_ws.html')
+
 @page_bp.route('/barchart')
 def barchart():
     return render_template('barchart.html')

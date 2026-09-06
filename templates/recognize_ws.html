@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>景點圖片辨識（WebSocket）</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f4f7fb;
+        }
+
+        .recognize-panel {
+            max-width: 760px;
+        }
+
+        #preview {
+            max-height: 360px;
+            object-fit: contain;
+        }
+
+        #output {
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.9;
+            font-size: 1.05rem;
+            min-height: 3rem;
+        }
+
+        .caret {
+            display: inline-block;
+            width: 0.6ch;
+            margin-left: 1px;
+            background: #0d6efd;
+            animation: blink 1s step-end infinite;
+        }
+
+        .caret::before {
+            content: "\00a0";
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .caret {
+                animation: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    {% include '_navbar.html' %}
+
+    <main class="container py-5 recognize-panel">
+        <h1 class="mb-2">景點圖片辨識（WebSocket）</h1>
+        <p class="text-secondary">
+            這一版用 <strong>WebSocket</strong> 雙向連線：辨識結果一段段推過來的同時，
+            按下「停止生成」會在<strong>同一條連線</strong>送出取消訊息，伺服器立刻中止 Gemini 串流。
+            這正是單向的 <a href="/recognize-stream">SSE 版</a>做不到的地方。
+        </p>
+
+        <form id="recognizeForm" class="card shadow-sm p-4">
+            <label for="image" class="form-label">選擇圖片</label>
+            <input id="image" name="image" class="form-control" type="file"
+                accept="image/jpeg,image/png,image/webp,image/heic,image/heif" required>
+            <img id="preview" class="img-fluid rounded mt-3 d-none" alt="圖片預覽">
+            <div class="d-flex gap-2 mt-4">
+                <button id="submitButton" class="btn btn-primary" type="submit">
+                    <span id="buttonText">開始辨識</span>
+                    <span id="spinner" class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
+                </button>
+                <button id="stopButton" class="btn btn-outline-danger d-none" type="button">停止生成</button>
+            </div>
+        </form>
+
+        <div id="message" class="alert d-none mt-4" role="alert"></div>
+        <section id="result" class="card shadow-sm mt-4 d-none">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>辨識結果</span>
+                <span id="status" class="badge text-bg-secondary"></span>
+            </div>
+            <div class="card-body">
+                <div id="output"></div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const form = document.querySelector('#recognizeForm');
+        const imageInput = document.querySelector('#image');
+        const preview = document.querySelector('#preview');
+        const submitButton = document.querySelector('#submitButton');
+        const buttonText = document.querySelector('#buttonText');
+        const spinner = document.querySelector('#spinner');
+        const stopButton = document.querySelector('#stopButton');
+        const message = document.querySelector('#message');
+        const result = document.querySelector('#result');
+        const output = document.querySelector('#output');
+        const statusBadge = document.querySelector('#status');
+
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        let ws = null;         // 目前的 WebSocket 連線
+        let typer = null;      // 目前的打字機
+        let finished = false;  // 這一輪是否已收到 done / stopped / error（收到後就忽略關閉事件）
+
+        imageInput.addEventListener('change', () => {
+            const file = imageInput.files[0];
+            if (!file) {
+                preview.classList.add('d-none');
+                return;
+            }
+            preview.src = URL.createObjectURL(file);
+            preview.classList.remove('d-none');
+        });
+
+        /* 打字機節流器：與 SSE 版相同，後端一次送多字，前端依時間逐字吐 */
+        function createTypewriter(target) {
+            let pending = '';
+            let shown = '';
+            let finished = false;
+            let rafId = null;
+            let lastTime = 0;
+            let budget = 0;
+            const CHARS_PER_SECOND = 18;
+
+            const caret = document.createElement('span');
+            caret.className = 'caret';
+
+            function render() {
+                target.textContent = shown;
+                if (!finished || pending.length) target.appendChild(caret);
+            }
+
+            function tick(now) {
+                if (!lastTime) lastTime = now;
+                const elapsed = (now - lastTime) / 1000;
+                lastTime = now;
+
+                budget += CHARS_PER_SECOND * elapsed;
+                while (budget >= 1 && pending.length) {
+                    shown += pending[0];
+                    pending = pending.slice(1);
+                    budget -= 1;
+                }
+                if (!pending.length) budget = 0;
+                render();
+
+                if (pending.length || !finished) {
+                    rafId = requestAnimationFrame(tick);
+                } else {
+                    rafId = null;
+                }
+            }
+
+            return {
+                push(text) {
+                    if (reduceMotion) {
+                        shown += text;
+                        render();
+                        return;
+                    }
+                    pending += text;
+                    if (rafId === null) {
+                        lastTime = 0;
+                        rafId = requestAnimationFrame(tick);
+                    }
+                },
+                done() {
+                    finished = true;
+                    if (reduceMotion || rafId === null) {
+                        shown += pending;
+                        pending = '';
+                        target.textContent = shown;
+                    }
+                },
+                stop() {
+                    if (rafId !== null) cancelAnimationFrame(rafId);
+                    rafId = null;
+                }
+            };
+        }
+
+        function setRunning(running) {
+            submitButton.disabled = running;
+            buttonText.textContent = running ? '辨識中...' : '開始辨識';
+            spinner.classList.toggle('d-none', !running);
+            stopButton.classList.toggle('d-none', !running);
+        }
+
+        // 「停止生成」：在同一條 WebSocket 連線送出取消訊息
+        stopButton.addEventListener('click', () => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'cancel' }));
+                statusBadge.textContent = '停止中...';
+            }
+        });
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const file = imageInput.files[0];
+            if (!file) return;
+
+            // 若上一條連線還開著，先拔掉事件再關，避免舊連線的 onclose 干擾這一輪
+            if (ws) {
+                ws.onopen = ws.onmessage = ws.onerror = ws.onclose = null;
+                try { ws.close(); } catch (e) { }
+                ws = null;
+            }
+            if (typer) typer.stop();
+
+            finished = false;
+            message.className = 'alert d-none mt-4';
+            result.classList.remove('d-none');
+            output.textContent = '';
+            statusBadge.className = 'badge text-bg-secondary';
+            statusBadge.textContent = '連線中...';
+            setRunning(true);
+
+            typer = createTypewriter(output);
+
+            // 依目前網址組出 ws:// 或 wss:// 位址
+            const wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${wsProto}//${location.host}/api/attraction/recognize-ws`);
+            ws.binaryType = 'arraybuffer';
+
+            ws.onopen = async () => {
+                statusBadge.textContent = '上傳圖片...';
+                // 1) 先送中繼資料（文字 frame）
+                ws.send(JSON.stringify({
+                    type: 'image_meta',
+                    filename: file.name,
+                    mime: file.type,
+                    size: file.size
+                }));
+                // 2) 再送圖片位元組（二進位 frame）
+                ws.send(await file.arrayBuffer());
+            };
+
+            ws.onmessage = (evt) => {
+                const payload = JSON.parse(evt.data);
+                switch (payload.type) {
+                    case 'status':
+                        statusBadge.textContent = payload.message;
+                        break;
+                    case 'delta':
+                        statusBadge.textContent = '生成中';
+                        typer.push(payload.text);
+                        break;
+                    case 'stopped':
+                        finished = true;
+                        statusBadge.className = 'badge text-bg-warning';
+                        statusBadge.textContent = payload.message || '已停止';
+                        typer.done();
+                        setRunning(false);
+                        break;
+                    case 'done':
+                        finished = true;
+                        statusBadge.className = 'badge text-bg-success';
+                        statusBadge.textContent = '完成';
+                        typer.done();
+                        setRunning(false);
+                        break;
+                    case 'error':
+                        finished = true;
+                        message.textContent = payload.message;
+                        message.className = 'alert alert-danger mt-4';
+                        statusBadge.className = 'badge text-bg-danger';
+                        statusBadge.textContent = '錯誤';
+                        typer.stop();
+                        setRunning(false);
+                        break;
+                }
+                // 收到終結訊息後，關閉交給伺服器那端主動做，這裡不再呼叫 ws.close()
+            };
+
+            ws.onerror = () => {
+                if (finished) return;  // 已正常結束，關閉時的殘留事件忽略
+                message.textContent = 'WebSocket 連線發生錯誤';
+                message.className = 'alert alert-danger mt-4';
+                typer.stop();
+                setRunning(false);
+            };
+
+            ws.onclose = () => {
+                if (finished) return;  // 正常結束
+                // 非預期中斷（連不上、伺服器掛掉、串到一半斷線）
+                typer.stop();
+                setRunning(false);
+                if (message.classList.contains('d-none')) {
+                    message.textContent = 'WebSocket 連線已中斷';
+                    message.className = 'alert alert-warning mt-4';
+                }
+                statusBadge.className = 'badge text-bg-secondary';
+                statusBadge.textContent = '連線已關閉';
+            };
+        });
+    </script>
+</body>
+
+</html>
