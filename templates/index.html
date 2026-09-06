@@ -35,56 +35,84 @@
         const imgLoader = document.querySelector('#img1');
         const btnStart = document.querySelector('#buttonStart');
 
-        //callback 回呼 => 非同步
-        // setTimeout(function () {
-        //     //傳送訊息給A
-        //     console.log('A');
-        //     setTimeout(function () {
-        //         //傳送訊息給B
-        //         console.log('B');
-        //         setTimeout(function () {
-        //             //傳送訊息給C
-        //             console.log('C');
-        //             setTimeout(function () {
-        //                 //傳送訊息給C
-        //                 console.log('D');
-        //             }, 1000);
-        //         }, 1000);
-        //     }, 1000);
+        //想想看蛋、咖啡、吐司印出的順序與時間
 
+        // //Demo1
+        // setTimeout(function () {
+        //     console.log('蛋');
+        // }, 1000);
+        // setTimeout(function () {
+        //     console.log('咖啡');
+        // }, 1000);
+        // setTimeout(function () {
+        //     console.log('土司');
         // }, 1000);
 
-        // promise
-        //     .then(() => {
-        //         console.log('A')
-        //     })
-        //     .then(() => {
-        //         console.lo('B')
-        //     })
-        //     .then(() => {
-        //         console.log('C')
-        //     })
-        //     .then(() => {
-        //         console.log('D')
-        //     })
+        // //Demo2
+        // setTimeout(function () {
+        //     console.log('蛋');
+        // }, 3000);
+        // setTimeout(function () {
+        //     console.log('咖啡');
+        // }, 2000);
+        // setTimeout(function () {
+        //     console.log('土司');
+        // }, 1000);
 
-        // async function demo() {
-        //     let data = await show("A");
-        //     console.log(data);
-        //     data = await show("B");
-        //     console.log(data);
-        //     data = await show("C");
-        //     console.log(data);
-        //     data = await show("D");
-        //     console.log(data);
+        // //Demo3
+        // setTimeout(function () {
+        //     console.log('蛋');
+        //     setTimeout(function () {
+        //         console.log('咖啡');
+        //         setTimeout(function () {
+        //             console.log('土司');
+        //         }, 1000);
+        //     }, 1000);
+        // }, 1000);
 
+
+
+
+        function printSomething(data) {
+            const promise = new Promise(function (resolve, reject) {
+                setTimeout(function () {
+                    resolve(data)
+                }, 1000);
+            })
+            return promise;
+        }
+
+        ////Demo4 promise 寫法
+        printSomething('蛋')
+            .then((data) => {
+                console.log(data);
+                return printSomething('咖啡');
+            })
+            .then((data) => {
+                console.log(data);
+                return printSomething('土司');
+            }).then((data) => {
+                console.log(data);
+                return printSomething('培根');
+            }).then((data) => {
+                console.log(data);
+            })
+
+
+        //aync/await 寫法
+        // async function demo5() {
+        //     let data = await printSomething("蛋");
+        //     console.log(data);
+        //     data = await printSomething("咖啡");
+        //     console.log(data);
+        //     data = await printSomething("土司");
+        //     console.log(data);
+        //     data = await printSomething("培根");
+        //     console.log(data);
         // }
 
+        //demo5();
 
-        // ()=>{} 箭頭函式
-        // btnStart.addEventListener('click', () => {
-        //     console.log('click');
-        // })
 
 
     </script>

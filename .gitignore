@@ -6,6 +6,7 @@ bin/
 include/
 lib/
 share/
+docs/
 pyvenv.cfg
 
 # --- Python 編譯快取 ---
