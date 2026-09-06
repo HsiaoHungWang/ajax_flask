@@ -16,6 +16,7 @@ from resources.attraction_recognition_api import AttractionImageRecognition
 from resources.attraction_recognition_stream_api import attraction_recognize_stream
 from resources.attraction_recognition_local_api import attraction_recognize_local
 from resources.attraction_recognition_ws_api import init_ws
+from resources.echo_ws_api import init_echo_ws
 from resources.clock_sse_api import clock_stream
 
 
@@ -25,6 +26,7 @@ api = Api(api_bp)
 # WebSocket 路由（flask_sock），掛在同一個 api 藍圖上 → /api/attraction/recognize-ws
 sock = Sock(api_bp)
 init_ws(sock)
+init_echo_ws(sock)   # 最簡單的 Echo Server → /api/ws/echo
 
 
 # http://127.0.0.1:5000/api/  #api哪裡來的

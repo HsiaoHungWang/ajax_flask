@@ -46,6 +46,10 @@ def recognize_local():
 def clock():
     return render_template('clock.html')
 
+@page_bp.route('/ws-hello')
+def ws_hello():
+    return render_template('ws_hello.html')
+
 @page_bp.route('/recognize-ws')
 def recognize_ws():
     return render_template('recognize_ws.html')

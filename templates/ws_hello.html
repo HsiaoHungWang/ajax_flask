@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello WebSocket</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f4f7fb;
+        }
+
+        .ws-panel {
+            max-width: 720px;
+        }
+
+        #log {
+            height: 220px;
+            overflow-y: auto;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+
+<body>
+    {% include '_navbar.html' %}
+
+    <main class="container py-5 ws-panel">
+        <h1 class="mb-2">Hello WebSocket</h1>
+        <p class="text-secondary">
+            最簡單的 <strong>WebSocket</strong> 範例：瀏覽器用 <code>new WebSocket()</code> 連上 Flask 的
+            <code>flask-sock</code> Echo Server，連線成功後送出「Hello WebSocket!!」，
+            伺服器把訊息加上 <code>Echo:</code> 前綴原樣送回。事件全部用 <code>addEventListener</code> 註冊。
+        </p>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body text-center">
+                <div class="text-secondary small">伺服器回傳的訊息</div>
+                <h2 id="output" class="my-3">尚未連線</h2>
+                <span id="state" class="badge text-bg-secondary">CONNECTING</span>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="input-group">
+                    <input id="msgInput" class="form-control" placeholder="輸入訊息後按送出" value="Hello WebSocket!!">
+                    <button id="sendBtn" class="btn btn-primary" disabled>送出</button>
+                    <button id="closeBtn" class="btn btn-outline-danger" disabled>關閉連線</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header">事件記錄</div>
+            <div id="log" class="card-body"></div>
+        </div>
+    </main>
+
+    <script>
+        const output = document.querySelector('#output');
+        const state = document.querySelector('#state');
+        const msgInput = document.querySelector('#msgInput');
+        const sendBtn = document.querySelector('#sendBtn');
+        const closeBtn = document.querySelector('#closeBtn');
+        const log = document.querySelector('#log');
+
+        function addLog(line) {
+            log.textContent += line + '\n';
+            log.scrollTop = log.scrollHeight;
+        }
+
+        let closingByUser = false;   // 是不是使用者自己按「關閉連線」
+
+        // 步驟一：建立 WebSocket 物件（網站是 https 就要用 wss://）
+        const wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const socket = new WebSocket(`${wsProto}//${location.host}/api/ws/echo`);
+
+        // 步驟二：連線成功 → 發送訊息給 WebSocket Server
+        socket.addEventListener('open', (event) => {
+            state.className = 'badge text-bg-success';
+            state.textContent = 'OPEN';
+            sendBtn.disabled = false;
+            closeBtn.disabled = false;
+            addLog('[open] 連線成功');
+
+            socket.send('Hello WebSocket!!');          // ← 對應投影片 socket.send("Hello Socket!!")
+            addLog('→ send: Hello WebSocket!!');
+        });
+
+        // 步驟三：message 事件 → 接收 WebSocket Server 回傳的資料
+        socket.addEventListener('message', (event) => {
+            addLog('← message: ' + event.data);
+            output.textContent = event.data;
+        });
+
+        // 步驟四：連線關閉
+        socket.addEventListener('close', (event) => {
+            state.className = 'badge text-bg-secondary';
+            state.textContent = 'CLOSED';
+            sendBtn.disabled = true;
+            closeBtn.disabled = true;
+            addLog(closingByUser
+                ? '[close] 已關閉連線（使用者主動關閉）'
+                : `[close] 連線關閉（code=${event.code}）`);
+        });
+
+        // error 事件
+        socket.addEventListener('error', () => {
+            // 使用者自己按關閉時，開發伺服器沒完成關閉握手，瀏覽器會補丟一個 error（code 1006）
+            // 這不是真的錯誤，忽略即可
+            if (closingByUser) return;
+            state.className = 'badge text-bg-danger';
+            state.textContent = 'ERROR';
+            addLog('[error] 連線發生錯誤');
+        });
+
+        // 讓使用者可以再送別的訊息
+        sendBtn.addEventListener('click', () => {
+            const text = msgInput.value;
+            socket.send(text);                         // send() 可送 string、Blob、ArrayBuffer
+            addLog('→ send: ' + text);
+        });
+
+        closeBtn.addEventListener('click', () => {
+            closingByUser = true;
+            socket.close();                            // 主動關閉連線
+        });
+    </script>
+</body>
+
+</html>
