@@ -72,3 +72,44 @@ class AttractionTitleSearch(Resource):
                     .limit(10).all()
 
         return [row.AttractionName for row in results], 200
+
+
+class AttractionCityStats(Resource):
+    """各縣市景點數量統計（長條圖用）。"""
+    def get(self):
+        results = db.session.query(
+            Attraction.City,
+            func.count(Attraction.AttractionID).label("count")
+        ).filter(Attraction.City.isnot(None), Attraction.City != "")\
+         .group_by(Attraction.City)\
+         .order_by(func.count(Attraction.AttractionID).desc()).all()
+
+        # 沿用 {category, count} 的鍵名，前端沿用既有邏輯
+        data = [{"category": row.City, "count": row.count} for row in results]
+        return {"data": data}, 200
+
+
+class AttractionsByCity(Resource):
+    """某縣市的所有景點座標（地圖用）。"""
+    def get(self):
+        city = request.args.get('city', '').strip()
+
+        query = Attraction.query.with_entities(
+            Attraction.AttractionName,
+            Attraction.PositionLat,
+            Attraction.PositionLon,
+        )
+        if city:
+            query = query.filter(Attraction.City == city)
+
+        results = query.all()
+        data = [
+            {
+                "title": row.AttractionName,
+                "lat": row.PositionLat,
+                "lng": row.PositionLon,
+            }
+            for row in results
+            if row.PositionLat and row.PositionLon
+        ]
+        return data, 200

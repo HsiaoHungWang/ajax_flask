@@ -6,8 +6,12 @@ from resources.items_api import Items, Item
 from resources.member_api import MembersResource, MemberResource, MemberExistCheck
 from resources.address_api import  CityResource, DistrictResource, RoadResource
 from resources.demo_api import QueryStringDemo, PathDemo, FormDataDemo, JsonDemo, ImageUploadDemo
-from resources.spot_api import Spots, SpotCategoryStats, SpotsByDistrict, SpotTitleSearch
-from resources.attraction_api import Attractions, AttractionTitleSearch
+from resources.attraction_api import (
+    Attractions,
+    AttractionTitleSearch,
+    AttractionCityStats,
+    AttractionsByCity,
+)
 from resources.attraction_recognition_api import AttractionImageRecognition
 from resources.attraction_recognition_stream_api import attraction_recognize_stream
 from resources.attraction_recognition_ws_api import init_ws
@@ -47,12 +51,10 @@ api.add_resource(FormDataDemo, '/demo/form')
 api.add_resource(JsonDemo, '/demo/json')  
 api.add_resource(ImageUploadDemo, '/demo/image')  
 
-api.add_resource(Spots, '/spots')
-api.add_resource(SpotCategoryStats, '/categories')
-api.add_resource(SpotsByDistrict, '/spot-district')
-
 api.add_resource(Attractions, '/attractions')
 api.add_resource(AttractionTitleSearch, '/attraction-title')
+api.add_resource(AttractionCityStats, '/attraction-city-stats')
+api.add_resource(AttractionsByCity, '/attractions-by-city')
 api.add_resource(AttractionImageRecognition, '/attraction/recognize')
 # 串流版不是 flask_restful 的 Resource，直接掛一般的 Flask 路由
 api_bp.add_url_rule(

@@ -32,10 +32,11 @@
 
         (async () => {
 
-            const apiUrl = 'http://127.0.0.1:5000/api/districts?city=臺北市';
+            // 縣市清單直接取自「各縣市景點數量」API（依景點數排序）
+            const apiUrl = 'http://127.0.0.1:5000/api/attraction-city-stats';
             const response = await fetch(apiUrl);
             const datas = await response.json();
-            const opts = datas.map(city => `<option>${city.substring(3, city.length)}</option>`);
+            const opts = datas.data.map(item => `<option>${item.category}</option>`);
             selCity.innerHTML = opts.join("");
 
             loadMap();
@@ -76,7 +77,7 @@
 
 
         const loadMap = async () => {
-            const apiUrl = `http://127.0.0.1:5000/api/spot-district?district=${selCity.value}`;
+            const apiUrl = `http://127.0.0.1:5000/api/attractions-by-city?city=${encodeURIComponent(selCity.value)}`;
             const response = await fetch(apiUrl);
             const datas = await response.json();
             renderSpotsOnMap(datas);

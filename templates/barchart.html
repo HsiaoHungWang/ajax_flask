@@ -25,7 +25,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
     <script>
         (async () => {
-            const apiUrl = 'http://127.0.0.1:5000/api/categories'
+            const apiUrl = 'http://127.0.0.1:5000/api/attraction-city-stats'
             const response = await fetch(apiUrl);
             const datas = await response.json();
             console.log(datas.data);
@@ -42,7 +42,7 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: '景點數量',
+                        label: '各縣市景點數量',
                         data: counts,
                         borderWidth: 1,
                         // backgroundColor: ["#4e79a7", "#f28e2b", "#e15759", "#76b7b2"]
@@ -65,8 +65,7 @@
                     responsive: true,
                     scales: {
                         y: {
-                            beginAtZero: true,
-                            max: 100
+                            beginAtZero: true
                         }
                     }
                 }
