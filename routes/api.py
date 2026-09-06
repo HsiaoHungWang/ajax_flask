@@ -14,6 +14,7 @@ from resources.attraction_api import (
 )
 from resources.attraction_recognition_api import AttractionImageRecognition
 from resources.attraction_recognition_stream_api import attraction_recognize_stream
+from resources.attraction_recognition_local_api import attraction_recognize_local
 from resources.attraction_recognition_ws_api import init_ws
 
 
@@ -60,6 +61,12 @@ api.add_resource(AttractionImageRecognition, '/attraction/recognize')
 api_bp.add_url_rule(
     '/attraction/recognize-stream',
     view_func=attraction_recognize_stream,
+    methods=['POST'],
+)
+# 地端模型版（Ollama），一樣走 SSE 串流
+api_bp.add_url_rule(
+    '/attraction/recognize-local',
+    view_func=attraction_recognize_local,
     methods=['POST'],
 )
 

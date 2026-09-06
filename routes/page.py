@@ -38,6 +38,10 @@ def recognize():
 def recognize_stream():
     return render_template('recognize_stream.html')
 
+@page_bp.route('/recognize-local')
+def recognize_local():
+    return render_template('recognize_local.html')
+
 @page_bp.route('/recognize-ws')
 def recognize_ws():
     return render_template('recognize_ws.html')

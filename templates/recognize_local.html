@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>景點圖片辨識（地端模型）</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f4f7fb;
+        }
+
+        .recognize-panel {
+            max-width: 760px;
+        }
+
+        #preview {
+            max-height: 360px;
+            object-fit: contain;
+        }
+
+        /* 辨識結果區：保留換行、字距舒服一點 */
+        #output {
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.9;
+            font-size: 1.05rem;
+            min-height: 3rem;
+        }
+
+        /* 打字機游標：一個會閃爍的方塊 */
+        .caret {
+            display: inline-block;
+            width: 0.6ch;
+            margin-left: 1px;
+            background: #0d6efd;
+            animation: blink 1s step-end infinite;
+        }
+
+        .caret::before {
+            content: "\00a0";
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
+
+        /* 使用者若在系統設定關閉動態效果，就不要閃爍 */
+        @media (prefers-reduced-motion: reduce) {
+            .caret {
+                animation: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    {% include '_navbar.html' %}
+
+    <main class="container py-5 recognize-panel">
+        <h1 class="mb-2">景點圖片辨識（地端模型）</h1>
+        <p class="text-secondary">
+            這一版跟 <a href="/recognize-stream">SSE 串流版</a> 的<strong>傳輸方式完全一樣</strong>
+            （SSE、打字機），差別只有一個：模型從雲端的 Gemini 換成<strong>本機 Ollama</strong>
+            跑的視覺模型。用來對照「同一套傳輸，模型放雲端 vs 放地端」的取捨
+            —— 地端免費、離線、資料不外流，但要先下載幾 GB 權重、吃本機資源、首次載入較慢，
+            小模型也不擅長「認出特定景點」，所以這裡改成請它<strong>用約 200 字描述照片畫面</strong>。
+        </p>
+        <p class="text-secondary small">
+            需先安裝 Ollama 並執行 <code>ollama pull qwen2.5vl:3b</code>；
+            首次辨識要等模型載入記憶體（CPU 環境可能十幾秒起跳）。
+        </p>
+
+        <form id="recognizeForm" class="card shadow-sm p-4">
+            <label for="image" class="form-label">選擇圖片</label>
+            <input id="image" name="image" class="form-control" type="file"
+                accept="image/jpeg,image/png,image/webp,image/heic,image/heif" required>
+            <img id="preview" class="img-fluid rounded mt-3 d-none" alt="圖片預覽">
+            <button id="submitButton" class="btn btn-primary mt-4" type="submit">
+                <span id="buttonText">開始辨識</span>
+                <span id="spinner" class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
+            </button>
+        </form>
+
+        <div id="message" class="alert d-none mt-4" role="alert"></div>
+        <section id="result" class="card shadow-sm mt-4 d-none">
+            <div class="card-header">辨識結果</div>
+            <div class="card-body">
+                <div id="output"></div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const form = document.querySelector('#recognizeForm');
+        const imageInput = document.querySelector('#image');
+        const preview = document.querySelector('#preview');
+        const submitButton = document.querySelector('#submitButton');
+        const buttonText = document.querySelector('#buttonText');
+        const spinner = document.querySelector('#spinner');
+        const message = document.querySelector('#message');
+        const result = document.querySelector('#result');
+        const output = document.querySelector('#output');
+
+        // 使用者若關閉動態效果，就整段直接顯示、不做逐字動畫
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        let currentController = null;  // 用來中斷「上一次還沒跑完」的請求
+
+        // 選圖後顯示預覽
+        imageInput.addEventListener('change', () => {
+            const file = imageInput.files[0];
+            if (!file) {
+                preview.classList.add('d-none');
+                return;
+            }
+            preview.src = URL.createObjectURL(file);
+            preview.classList.remove('d-none');
+        });
+
+        /* ------------------------------------------------------------------
+         * 打字機節流器（與 SSE 串流版相同）：
+         * 後端一個 chunk 可能一次送十幾個字，若直接塞進畫面會「一坨一坨」跳出來。
+         * 這裡把收到的文字先放進 pending 佇列，再用 requestAnimationFrame
+         * 依「經過的時間」每幀吐固定速度的字數，看起來就順順地一個一個浮現。
+         * ---------------------------------------------------------------- */
+        function createTypewriter(target) {
+            let pending = '';          // 還沒吐出來的文字
+            let shown = '';            // 已經顯示的文字
+            let finished = false;      // 後端是否已送完
+            let rafId = null;
+            let lastTime = 0;
+            let budget = 0;            // 累積的「可吐字數」，未滿 1 個字就留到下一幀
+            const CHARS_PER_SECOND = 18;   // 打字速度，想快就調大、想慢就調小
+
+            const caret = document.createElement('span');
+            caret.className = 'caret';
+
+            function render() {
+                target.textContent = shown;
+                if (!finished || pending.length) {
+                    target.appendChild(caret);
+                }
+            }
+
+            function tick(now) {
+                if (!lastTime) lastTime = now;
+                const elapsed = (now - lastTime) / 1000;
+                lastTime = now;
+
+                // 依經過時間累積可吐字數；不足 1 個字就留到下一幀，速度才會真的變慢
+                budget += CHARS_PER_SECOND * elapsed;
+                while (budget >= 1 && pending.length) {
+                    shown += pending[0];
+                    pending = pending.slice(1);
+                    budget -= 1;
+                }
+                if (!pending.length) budget = 0;
+                render();
+
+                if (pending.length || !finished) {
+                    rafId = requestAnimationFrame(tick);
+                } else {
+                    rafId = null;
+                }
+            }
+
+            return {
+                // 收到後端的一段文字
+                push(text) {
+                    if (reduceMotion) {
+                        shown += text;
+                        render();
+                        return;
+                    }
+                    pending += text;
+                    if (rafId === null) {
+                        lastTime = 0;
+                        rafId = requestAnimationFrame(tick);
+                    }
+                },
+                // 後端串流結束：把剩下的字吐完、移除游標
+                done() {
+                    finished = true;
+                    if (reduceMotion || rafId === null) {
+                        shown += pending;
+                        pending = '';
+                        target.textContent = shown;
+                    }
+                },
+                // 中途要中斷
+                stop() {
+                    if (rafId !== null) cancelAnimationFrame(rafId);
+                    rafId = null;
+                }
+            };
+        }
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            // 若上一次還在跑，先中斷
+            if (currentController) currentController.abort();
+            currentController = new AbortController();
+
+            message.className = 'alert d-none mt-4';
+            result.classList.remove('d-none');
+            output.textContent = '';
+            submitButton.disabled = true;
+            buttonText.textContent = '辨識中...';
+            spinner.classList.remove('d-none');
+
+            const typer = createTypewriter(output);
+
+            try {
+                const response = await fetch('/api/attraction/recognize-local', {
+                    method: 'POST',
+                    body: new FormData(form),
+                    signal: currentController.signal
+                });
+
+                // 串流「開始之前」的錯誤（例如沒選圖）走一般 JSON
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.error || `辨識失敗（HTTP ${response.status}）`);
+                }
+
+                // 逐段讀取 response body 這個串流
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    // 把這次收到的位元組解碼、接到 buffer 後面
+                    buffer += decoder.decode(value, { stream: true });
+
+                    // SSE 事件之間用空白行（\n\n）分隔，一次可能收到好幾個
+                    const frames = buffer.split('\n\n');
+                    buffer = frames.pop();  // 最後一段可能只收到一半，留著下一輪再拼
+
+                    for (const frame of frames) {
+                        const line = frame.trim();
+                        if (!line.startsWith('data:')) continue;
+
+                        const payload = JSON.parse(line.slice(5).trim());
+                        if (payload.error) throw new Error(payload.error);
+                        if (payload.delta) typer.push(payload.delta);
+                        if (payload.done) typer.done();
+                    }
+                }
+                typer.done();
+            } catch (error) {
+                typer.stop();
+                if (error.name === 'AbortError') return;  // 使用者自己中斷，不顯示錯誤
+                message.textContent = error.message;
+                message.className = 'alert alert-danger mt-4';
+            } finally {
+                submitButton.disabled = false;
+                buttonText.textContent = '開始辨識';
+                spinner.classList.add('d-none');
+                currentController = null;
+            }
+        });
+    </script>
+</body>
+
+</html>
