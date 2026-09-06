@@ -16,6 +16,7 @@ from resources.attraction_recognition_api import AttractionImageRecognition
 from resources.attraction_recognition_stream_api import attraction_recognize_stream
 from resources.attraction_recognition_local_api import attraction_recognize_local
 from resources.attraction_recognition_ws_api import init_ws
+from resources.clock_sse_api import clock_stream
 
 
 api_bp = Blueprint('api', __name__)
@@ -69,6 +70,8 @@ api_bp.add_url_rule(
     view_func=attraction_recognize_local,
     methods=['POST'],
 )
+# SSE 伺服器時鐘：每秒推一次伺服器時間
+api_bp.add_url_rule('/clock', view_func=clock_stream, methods=['GET'])
 
 
 api.add_resource(MembersResource, '/members')

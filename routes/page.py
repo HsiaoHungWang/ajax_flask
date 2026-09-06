@@ -42,6 +42,10 @@ def recognize_stream():
 def recognize_local():
     return render_template('recognize_local.html')
 
+@page_bp.route('/clock')
+def clock():
+    return render_template('clock.html')
+
 @page_bp.route('/recognize-ws')
 def recognize_ws():
     return render_template('recognize_ws.html')
