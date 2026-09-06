@@ -8,6 +8,7 @@ from resources.demo_api import QueryStringDemo, PathDemo, FormDataDemo, JsonDemo
 from resources.spot_api import Spots, SpotCategoryStats, SpotsByDistrict, SpotTitleSearch
 from resources.attraction_api import Attractions, AttractionTitleSearch
 from resources.attraction_recognition_api import AttractionImageRecognition
+from resources.attraction_recognition_stream_api import attraction_recognize_stream
 
 
 api_bp = Blueprint('api', __name__)
@@ -47,6 +48,12 @@ api.add_resource(SpotsByDistrict, '/spot-district')
 api.add_resource(Attractions, '/attractions')
 api.add_resource(AttractionTitleSearch, '/attraction-title')
 api.add_resource(AttractionImageRecognition, '/attraction/recognize')
+# 串流版不是 flask_restful 的 Resource，直接掛一般的 Flask 路由
+api_bp.add_url_rule(
+    '/attraction/recognize-stream',
+    view_func=attraction_recognize_stream,
+    methods=['POST'],
+)
 
 
 api.add_resource(MembersResource, '/members')

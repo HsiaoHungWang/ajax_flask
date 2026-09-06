@@ -34,6 +34,10 @@ def attraction():
 def recognize():
     return render_template('recognize.html')
 
+@page_bp.route('/recognize-stream')
+def recognize_stream():
+    return render_template('recognize_stream.html')
+
 @page_bp.route('/barchart')
 def barchart():
     return render_template('barchart.html')
