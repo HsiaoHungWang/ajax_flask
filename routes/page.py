@@ -30,6 +30,10 @@ def demo():
 def attraction():
     return render_template('attraction.html')
 
+@page_bp.route('/recognize')
+def recognize():
+    return render_template('recognize.html')
+
 @page_bp.route('/barchart')
 def barchart():
     return render_template('barchart.html')

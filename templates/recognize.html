@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>景點圖片辨識</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f4f7fb;
+        }
+
+        .recognize-panel {
+            max-width: 760px;
+        }
+
+        #preview {
+            max-height: 360px;
+            object-fit: contain;
+        }
+
+        #result pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+    </style>
+</head>
+
+<body>
+    {% include '_navbar.html' %}
+
+    <main class="container py-5 recognize-panel">
+        <h1 class="mb-2">景點圖片辨識</h1>
+        <p class="text-secondary">上傳景點照片，請 Gemini 回傳景點名稱、位置與簡短介紹。</p>
+
+        <form id="recognizeForm" class="card shadow-sm p-4">
+            <label for="image" class="form-label">選擇圖片</label>
+            <input id="image" name="image" class="form-control" type="file"
+                accept="image/jpeg,image/png,image/webp,image/heic,image/heif" required>
+            <img id="preview" class="img-fluid rounded mt-3 d-none" alt="圖片預覽">
+            <button id="submitButton" class="btn btn-primary mt-4" type="submit">
+                <span id="buttonText">開始辨識</span>
+                <span id="spinner" class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
+            </button>
+        </form>
+
+        <div id="message" class="alert d-none mt-4" role="alert"></div>
+        <section id="result" class="card shadow-sm mt-4 d-none">
+            <div class="card-header">辨識結果</div>
+            <div class="card-body">
+                <pre id="resultJson" class="mb-0"></pre>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const form = document.querySelector('#recognizeForm');
+        const imageInput = document.querySelector('#image');
+        const preview = document.querySelector('#preview');
+        const submitButton = document.querySelector('#submitButton');
+        const buttonText = document.querySelector('#buttonText');
+        const spinner = document.querySelector('#spinner');
+        const message = document.querySelector('#message');
+        const result = document.querySelector('#result');
+        const resultJson = document.querySelector('#resultJson');
+
+        imageInput.addEventListener('change', () => {
+            const file = imageInput.files[0];
+            if (!file) {
+                preview.classList.add('d-none');
+                return;
+            }
+            preview.src = URL.createObjectURL(file);
+            preview.classList.remove('d-none');
+        });
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            message.className = 'alert d-none mt-4';
+            result.classList.add('d-none');
+            submitButton.disabled = true;
+            buttonText.textContent = '辨識中...';
+            spinner.classList.remove('d-none');
+
+            try {
+                const response = await fetch('/api/attraction/recognize', {
+                    method: 'POST',
+                    body: new FormData(form)
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || '辨識失敗');
+                }
+                resultJson.textContent = JSON.stringify(data, null, 2);
+                result.classList.remove('d-none');
+            } catch (error) {
+                message.textContent = error.message;
+                message.className = 'alert alert-danger mt-4';
+            } finally {
+                submitButton.disabled = false;
+                buttonText.textContent = '開始辨識';
+                spinner.classList.add('d-none');
+            }
+        });
+    </script>
+</body>
+
+</html>
